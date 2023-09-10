@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 # Create your views here.
 
@@ -50,3 +51,23 @@ def register_view(request):
         else:
             messages.error(request, "an error occurred during Registration ")
     return render(request, "register.html", context)
+
+
+@login_required
+def dashboard_view(request):
+    today = timezone.now().date()
+
+    # Tasks that are overdue
+    overdue_tasks = models.Task.objects.filter(user=request.user, date__lt=today)
+
+    # Tasks for the current day
+    today_tasks = models.Task.objects.filter(user=request.user, date=today)
+
+    return render(
+        request,
+        "dashboard.html",
+        {
+            "overdue_tasks": overdue_tasks,
+            "today_tasks": today_tasks,
+        },
+    )

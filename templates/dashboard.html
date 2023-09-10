@@ -1,0 +1,21 @@
+{% extends 'base.html' %}{% block content %}
+<h1>Dashboard</h1>
+
+<h2>Overdue Tasks</h2>
+<ul>
+  {% for task in overdue_tasks %}
+  <li>{{ task.name }}</li>
+  {% empty %}
+  <li>No overdue tasks.</li>
+  {% endfor %}
+</ul>
+
+<h2>Tasks for Today</h2>
+<ul>
+  {% for task in today_tasks %}
+  <li>{{ task.name }}</li>
+  {% empty %}
+  <li>No tasks for today.</li>
+  {% endfor %}
+</ul>
+{% endblock content %}
