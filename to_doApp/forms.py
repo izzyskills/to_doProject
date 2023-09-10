@@ -24,4 +24,4 @@ class TaskCreationForm(forms.ModelForm):
 class CategoryCreationForm(forms.ModelForm):
     class Meta:
         model = models.Category
-        fields = "name"
+        fields = ["name"]

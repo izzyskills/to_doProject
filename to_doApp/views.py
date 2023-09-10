@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 
 
 def home_view(request):
-    return render(request, "home.html")
+    return render(request, "index.html")
 
 
 def logoutUser(request):
@@ -19,29 +19,31 @@ def logoutUser(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect("dashboard")
+        return redirect("home")
     if request.method == "POST":
         form = forms.LoginForm(request.POST)
         if form.is_valid():
             # Perform authentication and login logic here
-            username = form.cleaned_data["username"]
+            username = form.cleaned_data["username"].lower()
             password = form.cleaned_data["password"]
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect("dashboard")
+                return redirect("home")
+            else:
+                messages.error(request, "an error occurred during Authentication ")
 
     return render(request, "login.html", {"form": forms.LoginForm})
 
 
 def register_view(request):
     logout(request)
-    userForm = forms.UserCreationForm()
-    context = {"userForm": userForm}
+    form = forms.UserCreationForm()
+    context = {"form": form}
     if request.method == "POST":
-        userForm = forms.UserCreationForm(request.POST)
-        if userForm.is_valid():
-            user = userForm.save(commit=False)
+        form = forms.UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
             user.username = user.username.lower()
             user.save()
             return redirect("login")
