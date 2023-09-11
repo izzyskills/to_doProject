@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from . import models, forms
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -20,7 +20,7 @@ def logoutUser(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect("home")
+        return redirect("dashboard")
     if request.method == "POST":
         form = forms.LoginForm(request.POST)
         if form.is_valid():
@@ -30,7 +30,7 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect("home")
+                return redirect("dashboard")
             else:
                 messages.error(request, "an error occurred during Authentication ")
 
@@ -53,15 +53,13 @@ def register_view(request):
     return render(request, "register.html", context)
 
 
-@login_required
+@login_required(login_url="login")
 def dashboard_view(request):
+    categories = models.Category.objects.filter(user=request.user)
     today = timezone.now().date()
-
-    # Tasks that are overdue
     overdue_tasks = models.Task.objects.filter(user=request.user, date__lt=today)
-
-    # Tasks for the current day
     today_tasks = models.Task.objects.filter(user=request.user, date=today)
+    dashboard_task_count = today_tasks.count() + overdue_tasks.count()
 
     return render(
         request,
@@ -69,5 +67,58 @@ def dashboard_view(request):
         {
             "overdue_tasks": overdue_tasks,
             "today_tasks": today_tasks,
+            "dashboard_task_count": dashboard_task_count,
+            "categories": categories,
         },
     )
+
+
+@login_required(login_url="login")
+def tasks_by_category(request, category_name):
+    categories = models.Category.objects.filter(user=request.user)
+    if category_name == "Inbox":
+        tasks = models.Task.objects.filter(category=None, user=request.user)
+    else:
+        category = get_object_or_404(
+            models.Category, name=category_name, user=request.user
+        )
+        tasks = models.Task.objects.filter(category=category, user=request.user)
+
+    inbox_task_count = tasks.count()
+
+    return render(
+        request,
+        "tasks_by_category.html",
+        {
+            "category_name": category_name,
+            "tasks": tasks,
+            "inbox_task_count": inbox_task_count,
+            "categories": categories,
+        },
+    )
+
+
+@login_required(login_url="login")
+def create_task(request):
+    if request.method == "POST":
+        form = forms.TaskCreationForm(request.user, request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.user = request.user
+            task.save()
+            return redirect("dashboard")
+    form = forms.TaskCreationForm(request.user)
+    return render(request, "task_creation.html", {"form": form})
+
+
+@login_required(login_url="login")
+def create_category(request):
+    if request.method == "POST":
+        form = forms.CategoryCreationForm(request.POST)
+        if form.is_valid():
+            category = form.save(commit=False)
+            category.user = request.user
+            category.save()
+            return redirect("dashboard")
+    form = forms.CategoryCreationForm()
+    return render(request, "task_creation.html", {"form": form})

@@ -6,6 +6,7 @@
     <title>ToDo App</title>
   </head>
   <body>
-    {% block content %}{% endblock content %}
+    {% include 'navbar.html' %}
+    <div class="content">{% block content %}{% endblock content %}</div>
   </body>
 </html>

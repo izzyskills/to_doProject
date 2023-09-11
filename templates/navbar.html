@@ -1,0 +1,27 @@
+<nav>
+  {% if request.user.is_authenticated %}
+  <ul>
+    <li><a href="{% url 'dashboard' %}">Today</a></li>
+    <li>
+      <a href="{% url 'tasks_by_category' category_name='Inbox' %}">Inbox</a>
+    </li>
+    {% for category in categories %}
+    <li>
+      <a href="{% url 'tasks_by_category' category_name=category.name %}">
+        {{ category.name }}
+        <span class="task-count">{{ category.tasks.count }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <ul>
+    <li>
+      <a href="{% url 'login' %}">Login</a>
+    </li>
+    <li>
+      <a href="{% url 'register' %}">Login</a>
+    </li>
+  </ul>
+  {% endif %}
+</nav>
