@@ -9,9 +9,6 @@ class Category(models.Model):
     name = models.CharField(max_length=20)
     user = models.ForeignKey(User, related_name="owner", on_delete=models.CASCADE)
 
-    def __str__(self) -> str:
-        return self.name
-
     def clean(self):
         if " " in self.name:
             raise ValidationError("Category names cannot contain spaces.")
@@ -33,4 +30,24 @@ class Task(models.Model):
     )
     date = models.DateField(blank=True, null=True)
     status = models.BooleanField(default=False)
-    recurrence = models.CharField(max_length=50, null=True, blank=True)
+    recurrence = models.IntegerField(
+        choices=[(0, "none"), (1, "daily"), (2, "Weekly"), (3, "Monthly")]
+    )
+
+    def save(self, *args, **kwargs):
+        if self.date is None and self.recurrence != 0:
+            self.date = datetime.date.today()
+        if self.pk and self.status and self.recurrence != 0:
+            if self.recurrence == 1:
+                self.date += datetime.timedelta(days=1)
+            elif self.recurrence == 2:
+                self.date += datetime.timedelta(weeks=1)
+            elif self.recurrence == 3:
+                self.date = self.date.replace(day=1) + datetime.timedelta(days=30)
+
+            self.status = False
+
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.name} :{self.user}"

@@ -1,17 +1,12 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
+from rest_framework.routers import SimpleRouter
 
+router = SimpleRouter()
+router.register(r"tasks", views.TaskViewSet, basename="task")
+router.register(r"category", views.CategoryViewSet, basename="category")
 urlpatterns = [
-    path("", views.home_view, name="home"),
-    path("login/", views.login_view, name="login"),
-    path("register/", views.register_view, name="register"),
-    path("logout/", views.logoutUser, name="logout"),
-    path("dashboard/", views.dashboard_view, name="dashboard"),
-    path("create/task/", views.create_task, name="create_task"),
-    path("create/category/", views.create_category, name="create_category"),
-    path(
-        "category/<slug:category_name>/",
-        views.tasks_by_category,
-        name="tasks_by_category",
-    ),
+    path("", include(router.urls)),
+    path("register/", views.RegistrationView.as_view(), name="register"),
+    path("login/", views.LoginView.as_view(), name="login"),
 ]
