@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate
-from rest_framework import viewsets, status, permissions, views
+from rest_framework import viewsets, status, permissions, views, authentication
 from rest_framework.decorators import action
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
@@ -25,7 +25,10 @@ class LoginView(views.APIView):
         )
         if user:
             token, created = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key}, status=status.HTTP_200_OK)
+            response = Response({"token": token.key}, status=status.HTTP_200_OK)
+            response.set_cookie("access_token", token, httponly=True)
+            return response
+
         return Response(
             {"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST
         )
@@ -33,6 +36,10 @@ class LoginView(views.APIView):
 
 class RegistrationView(views.APIView):
     def post(self, request):
+        cookie = request.COOKIES.get("access_token")
+        if not cookie:
+            return Response({"error": "cookie not found"})
+
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -44,6 +51,7 @@ class RegistrationView(views.APIView):
 class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
 
     def get_queryset(self):
         return Category.objects.filter(user=self.request.user)
@@ -55,6 +63,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
 
     def get_queryset(self):
         return Task.objects.filter(user=self.request.user)
@@ -66,6 +75,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 class DashboardViewSet(viewsets.ViewSet):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
 
     def list(self, request):
         today = timezone.now().date()
@@ -87,6 +97,7 @@ class DashboardViewSet(viewsets.ViewSet):
 class TasksByCategoryViewSet(viewsets.ViewSet):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
 
     def list(self, request, category_name=None):
         if category_name == "Inbox":
